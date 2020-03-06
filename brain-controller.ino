@@ -1,30 +1,48 @@
 
 #include <ArduinoWebsockets.h>
 #include <ESP8266WiFi.h>
+#include <Servo.h>
 
-const char* ssid = "ssid"; //Enter SSID
-const char* password = "password"; //Enter Password
-const char* websockets_server = "www.myserver.com:8080"; //server adress and port
+#include "my_super_secret_passwords.h"
+
+
+const char* ssid = SUPER_SECRET_SSID; //Enter SSID
+const char* password = SUPER_SECRET_PASSWORD; //Enter Password
+const char* websockets_server = SUPER_SECRET_SERVER; //server adress and port
 
 using namespace websockets;
 
 
 WebsocketsClient client;
+Servo left;
+Servo right;
 
 void connectWiFi() {
   // Connect to wifi
   WiFi.begin(ssid, password);
   Serial.print("Connecting WiFi");
   // Wait some time to connect to wifi
-  for (int i = 0; i < 10 && WiFi.status() != WL_CONNECTED; i++) {
+  while(true) {
     Serial.print(".");
     delay(100);
+    if(WiFi.status() == WL_CONNECTED) {
+      break;
+    }
   }
-  Serial.println();
+  Serial.println("Connected!");
 }
 
 void connectWebsocket() {
-  client.connect(websockets_server);
+  Serial.print("Connecting Websocket");
+  while(true) {
+    Serial.print(".");
+    client.connect(websockets_server);
+    delay(100);  
+    if(client.available()) {
+      break;
+    }
+  }
+  Serial.print("Connected!");
 }
 
 void onMessageCallback(WebsocketsMessage message) {
@@ -46,12 +64,22 @@ void onEventsCallback(WebsocketsEvent event, String data) {
   }
 }
 
+void set(Servo* s, double val) {
+  if(val > 1.0) {
+    val = 1.0;
+  } else if(val < -1.0) {
+    val  = -1.0;
+  }
+  s->writeMicroseconds(1500 + 500*val);
+}
+
 void setup() {
   Serial.begin(9600);
   
   connectWiFi();
   connectWebsocket();
-
+  left.attach(4);
+  
   // Setup Callbacks
   client.onMessage(onMessageCallback);
   client.onEvent(onEventsCallback);
@@ -59,4 +87,5 @@ void setup() {
 
 void loop() {
   client.poll();
+  set(&left, 0.1);
 }
