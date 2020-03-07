@@ -42,12 +42,20 @@ void connectWebsocket() {
       break;
     }
   }
-  Serial.print("Connected!");
+  Serial.println("Connected!");
 }
+
+const char* rot_type = "MEDITATION: ";
 
 void onMessageCallback(WebsocketsMessage message) {
   Serial.print("Got Message: ");
-  Serial.println(message.data());
+  const char* msg = message.c_str();
+  Serial.println(msg);
+  size_t len = strlen(msg);
+  if(!strncmp(msg, rot_type, strlen(rot_type))) {
+    long val = atol(strchr(msg, ' '));
+    set(&left, (val - 50)/100.0);
+  }
 }
 
 void onEventsCallback(WebsocketsEvent event, String data) {
@@ -87,5 +95,4 @@ void setup() {
 
 void loop() {
   client.poll();
-  set(&left, 0.1);
 }
